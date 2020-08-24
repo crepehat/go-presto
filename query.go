@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	initialRetry            = 50 * time.Millisecond
-	maxRetry                = 800 * time.Millisecond
+	initialRetry            = 100 * time.Millisecond
+	maxRetry                = 1600 * time.Millisecond
 	ProgressUnknown float64 = -1.0
 )
 
@@ -234,7 +234,7 @@ func (q *Query) fetchResult(req *http.Request) (*queryResult, error) {
 	return result, nil
 }
 
-func (q *Query) makeRequest(req *http.Request) (*http.Response, error) {
+func (q *Query) makeRequest(req *http.Request) (resp *http.Response, err error) {
 	prestoUser := q.setBasicAuth(req)
 
 	req.Header.Add("User-Agent", userAgent)
@@ -246,20 +246,14 @@ func (q *Query) makeRequest(req *http.Request) (*http.Response, error) {
 	// Sometimes presto returns a 503 to indicate that results aren't yet
 	// available, and we should retry after waiting a bit.
 	retry := initialRetry
-	for {
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			time.Sleep(retry)
-			retry *= 2
-			if retry > maxRetry {
-				retry = maxRetry
-			}
-			continue
-			// return nil, err
-		}
+	for retry < maxRetry {
+		retry *= 2
 
-		// fmt.Println(resp.StatusCode)
+		resp, err = http.DefaultClient.Do(req)
+		if err != nil {
+			time.Sleep(retry)
+			continue
+		}
 
 		if resp.StatusCode == 200 {
 			return resp, nil
@@ -268,11 +262,9 @@ func (q *Query) makeRequest(req *http.Request) (*http.Response, error) {
 		}
 
 		time.Sleep(retry)
-		retry *= 2
-		if retry > maxRetry {
-			retry = maxRetry
-		}
+
 	}
+	return nil, fmt.Errorf("hit retry limit with error: %+v", err.Error())
 }
 
 func (q *Query) readResult(resp *http.Response) (*queryResult, error) {
