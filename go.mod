@@ -1,4 +1,4 @@
-module github/com/crepehat/go-presto
+module github.com/crepehat/go-presto
 
 go 1.13
 
