@@ -249,10 +249,17 @@ func (q *Query) makeRequest(req *http.Request) (*http.Response, error) {
 	for {
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			return nil, err
+			fmt.Println(err)
+			time.Sleep(retry)
+			retry *= 2
+			if retry > maxRetry {
+				retry = maxRetry
+			}
+			continue
+			// return nil, err
 		}
 
-		fmt.Println(resp.StatusCode)
+		// fmt.Println(resp.StatusCode)
 
 		if resp.StatusCode == 200 {
 			return resp, nil
