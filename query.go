@@ -238,6 +238,8 @@ func (q *Query) makeRequest(req *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 
+		fmt.Println(resp.StatusCode)
+
 		if resp.StatusCode == 200 {
 			return resp, nil
 		} else if resp.StatusCode != 503 {
