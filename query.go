@@ -12,7 +12,7 @@ import (
 
 const (
 	initialRetry            = 1 * time.Second
-	maxRetry                = 65 * time.Millisecond
+	maxRetry                = 65 * time.Second
 	ProgressUnknown float64 = -1.0
 )
 
