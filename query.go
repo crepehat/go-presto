@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	initialRetry            = 1 * time.Second
-	maxRetry                = 65 * time.Second
-	ProgressUnknown float64 = -1.0
+	retryFailureWaitTime         = 10 * time.Second
+	retryNormalWaitTime          = 1 * time.Second
+	maxRetryFailureCount         = 10
+	ProgressUnknown      float64 = -1.0
 )
 
 // Query represents an open query to presto.
@@ -145,7 +146,6 @@ func (q *Query) Close() error {
 
 // Next retrieves the next row from the dataset, fetching more if need be.
 func (q *Query) Next() ([]interface{}, error) {
-	retry := initialRetry
 	for !q.closed && len(q.bufferedRows) == 0 {
 		err := q.fetchNext()
 		if err != nil {
@@ -153,11 +153,8 @@ func (q *Query) Next() ([]interface{}, error) {
 		}
 
 		if len(q.bufferedRows) == 0 {
-			time.Sleep(retry)
-			retry *= 2
-			if retry > maxRetry {
-				retry = maxRetry
-			}
+			time.Sleep(retryNormalWaitTime)
+
 		}
 	}
 
@@ -245,13 +242,13 @@ func (q *Query) makeRequest(req *http.Request) (resp *http.Response, err error) 
 
 	// Sometimes presto returns a 503 to indicate that results aren't yet
 	// available, and we should retry after waiting a bit.
-	retry := initialRetry
-	for retry < maxRetry {
-		retry *= 2
+	failureCount := 0
+	for failureCount < maxRetryFailureCount {
 
 		resp, err = http.DefaultClient.Do(req)
 		if err != nil {
-			time.Sleep(retry)
+			time.Sleep(retryFailureWaitTime)
+			failureCount++
 			continue
 		}
 
@@ -261,7 +258,9 @@ func (q *Query) makeRequest(req *http.Request) (resp *http.Response, err error) 
 			return nil, fmt.Errorf("unexpected http status: %s", resp.Status)
 		}
 
-		time.Sleep(retry)
+		fmt.Println("retrying presto request")
+
+		time.Sleep(retryNormalWaitTime)
 
 	}
 	return nil, fmt.Errorf("hit retry limit with error: %+v", err.Error())
