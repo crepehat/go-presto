@@ -258,8 +258,6 @@ func (q *Query) makeRequest(req *http.Request) (resp *http.Response, err error) 
 			return nil, fmt.Errorf("unexpected http status: %s", resp.Status)
 		}
 
-		fmt.Println("retrying presto request")
-
 		time.Sleep(retryNormalWaitTime)
 
 	}
@@ -277,7 +275,6 @@ func (q *Query) readResult(resp *http.Response) (*queryResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error decoding json response from presto: %s", err)
 	}
-	fmt.Printf("%+v\n", result)
 
 	return &result, nil
 }
