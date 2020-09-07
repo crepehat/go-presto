@@ -192,7 +192,7 @@ func (q *Query) fetchNext() error {
 	q.bufferedRows = result.Data
 	q.state = result.Stats.State
 
-	if q.columns == nil {
+	if len(q.columns) == 0 && len(result.Columns) > 0 {
 		q.columns = make([]string, len(result.Columns))
 		for i, col := range result.Columns {
 			q.columns[i] = col.Name
