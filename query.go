@@ -277,6 +277,7 @@ func (q *Query) readResult(resp *http.Response) (*queryResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error decoding json response from presto: %s", err)
 	}
+	fmt.Printf("%+v\n", result)
 
 	return &result, nil
 }
